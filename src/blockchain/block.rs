@@ -3,7 +3,7 @@ use sha2::{Sha256, Digest};
 use chrono::prelude::*;
 
 // transaction object for data in a block
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Transaction {
     sender: String,
     receiver: String,
@@ -18,25 +18,36 @@ impl Transaction {
             amount: amount,
         }
     }
+
+    pub fn get_sender(&self) -> String {
+        self.sender.clone()
+    }
+
+    pub fn get_receiver(&self) -> String {
+        self.receiver.clone()
+    }
+
+    pub fn get_amount(&self) -> f32 {
+        self.amount
+    }
 }
 
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
-    index: u32,
     timestamp: DateTime<Utc>,
-    transaction: Transaction,
+    transactions: Vec<Transaction>,
     previous_hash: String,
     hash: String,
     nonce: u64,
 }
 
+#[allow(dead_code)]
 impl Block {
-    pub fn new(index: u32, timestamp: DateTime<Utc>, transaction: Transaction, previous_hash: String) -> Self {
+    pub fn new(timestamp: DateTime<Utc>, transactions: Vec<Transaction>, previous_hash: String) -> Self {
         let mut block = Block {
-            index: index,
             timestamp: timestamp,
-            transaction: transaction,
+            transactions: transactions,
             previous_hash: previous_hash,
             hash: "".to_string(),
             nonce: 0,
@@ -49,8 +60,11 @@ impl Block {
     pub fn calculate_hash(&self) -> String {
         let mut hasher = Sha256::new();
         // converting a transaction to a string
-        let transaction_string = format!("{:?}", self.transaction);
-        let data = format!("{}{}{}{}{}", self.index, self.timestamp, transaction_string, self.previous_hash, self.nonce);
+        let mut transaction_string = "".to_string();
+        for transaction in &self.transactions {
+            transaction_string.push_str(&format!("{:?}", transaction));
+        }
+        let data = format!("{}{}{}{}", self.timestamp, transaction_string, self.previous_hash, self.nonce);
         hasher.update(data);
         let result = hasher.finalize();
         format!("{:x}", result)
@@ -74,6 +88,10 @@ impl Block {
 
     pub fn get_previous_hash(&self) -> String {
         self.previous_hash.clone()
+    }
+
+    pub fn get_transactions(&self) -> Vec<Transaction> {
+        self.transactions.clone()
     }
 
     pub fn mine_block(&mut self, difficulty: u32) -> String {
