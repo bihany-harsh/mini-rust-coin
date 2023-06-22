@@ -18,4 +18,5 @@ fn main() {
     blockchain.add_block(block);
 
     println!("{:#?}", blockchain);
+    println!("Is the blockchain valid? {}", blockchain.is_chain_valid());
 }
